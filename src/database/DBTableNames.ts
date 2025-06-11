@@ -1,0 +1,36 @@
+import { CONFIGURATION } from 'src/libs';
+
+const environment = CONFIGURATION.APP.ENV.toLowerCase();
+
+export const VERIFIICATION_SERVICE_PROVIDERS = `${environment}_verification_service_providers`;
+export const DELETED_ACCOUNTS = `${environment}_deleted_account`;
+export const USERS = `${environment}_users`;
+export const TRANSACTIONAL_INBOX = `${environment}_transactional_inbox`;
+export const TRANSACTIONAL_OUTBOX = `${environment}_transactional_outbox`;
+export const OTPS = `${environment}_otps`;
+export const STATE = `${environment}_states`;
+export const LGA = `${environment}_lgas`;
+export const COUNTRY = `${environment}_countries`;
+export const PROVIDER_AUTH_TOKEN = `${environment}_provider_auth_tokens`;
+export const CUSTOMER_PROFILES = `${environment}_customer_profiles`;
+export const PUSH_NOTIFICATION = `${environment}_push_notifications`;
+export const RESTRICTED_USERS = `${environment}_restricted_users`;
+export const SMS_LOGS = `${environment}_sms_logs`;
+export const VERIFICATION_LOGS = `${environment}_verification_logs`;
+export const USER_ACTIVITIES = `${environment}_user_activities`;
+export const USER_DEVICE = `${environment}_user_devices`;
+export const USER_TIER = `${environment}_user_tiers`;
+export const USER_VERIFICATION = `${environment}_user_verifications`;
+export const SYSTEM_SETTINGS = `${environment}_system_settings`;
+export const FEATURE_FLAGS = `${environment}_feature_flags`;
+export const TRANSACTIONAL_SERVICE_PROVIDERS = `${environment}_transactional_service_providers`;
+export const COMMUNICATION_SERVICE_PROVIDERS = `${environment}_communication_service_providers`;
+export const CMS_ADMIN = `${environment}_cms_admins`;
+export const TOKEN_LOGS = `${environment}_token_logs`;
+export const BENEFICIARIES = `${environment}_beneficiaries`;
+export const DEFAULT_COMMISSIONS = `${environment}_default_commissions`;
+export const CUSTOMER_COMMISSIONS = `${environment}_customer_commissions`;
+export const TRANSACTION_HISTORY = `${environment}_transaction_histories`;
+export const USER_PIN = `${environment}_customer_pins`;
+export const TIER_SETTING = `${environment}_tier_settings`;
+export const ALERT_SETTING = `${environment}_alert_settings`;
