@@ -1,26 +1,27 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, Matches, IsOptional } from 'class-validator';
-import { BaseLoginDto } from 'src/modules/common-module';
+import { IsNotEmpty, IsString, Matches, IsPhoneNumber } from 'class-validator';
 
-export class CustomerLoginDto extends BaseLoginDto {
+export class BaseLoginDto {
   @ApiProperty({
-    title: 'Device ID',
-    example: '1234567890',
+    example: '123456',
+    required: true,
+    title: '6-digit PIN',
+  })
+  @IsNotEmpty({ message: 'Login PIN is required' })
+  @IsString({ message: 'Password must be a string' })
+  @Matches(/^\d{6}$/, {
+    message: 'Password must be a 6-digit PIN containing only numbers',
+  })
+  readonly password: string;
+
+  @ApiProperty({
+    example: '08012345678',
+    title: ' Phone number',
     required: true,
   })
-  @IsString({ message: 'Device must be a string' })
-  @IsNotEmpty({ message: 'Device is required.' })
-  @Matches(/^[^\s]+$/, { message: 'Device cannot contain whitespace.' })
-  readonly device: string;
-
-  @ApiProperty({
-    title: 'FCM token',
-    example: '889badaf-6b42-4312-a8e8-b994a3d37d22',
-    required: false,
-  })
-  @IsOptional()
-  @IsString({ message: 'FCM token must be a string' })
-  @IsNotEmpty({ message: 'FCM token is required.' })
-  @Matches(/^[^\s]+$/, { message: 'FCM token cannot contain whitespace.' })
-  readonly fcm_token?: string;
+  @IsNotEmpty({ message: ' Phone number is required.' })
+  @Matches(/^[^\s]+$/, { message: ' Phone number cannot be empty.' })
+  @IsString({ message: ' Phone number must be a string' })
+  @IsPhoneNumber('NG', { message: 'Invalid  Phone number format' })
+  readonly phone: string;
 }

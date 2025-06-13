@@ -1,25 +1,23 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { User } from 'src/database/entities';
 import { UserRepository } from 'src/database/repositories';
-import { WalletService } from 'wallets/wallets.service';
-import { DataSource } from 'typeorm';
+import { WalletService } from 'src/modules/wallets/services/wallets/wallets.service';
+import { DataSource, FindOptionsWhere } from 'typeorm';
+import { CreateUserDto } from '../../dtos/createUser.dto';
 
 @Injectable()
 export class UsersService {
+  protected readonly logger = new Logger(UsersService.name);
   constructor(
     private readonly dataSource: DataSource,
     private readonly userRepository: UserRepository,
     private readonly walletsService: WalletService,
   ) {}
 
-  // Fetch a user by ID with related wallet
   async findById(id: number) {
-    const user = await this.userRepository.findOne(
-      {
-        id,
-      },
-      { relations: ['wallet'] },
-    );
+    const user = await this.userRepository.findOne({
+      id,
+    });
 
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
@@ -28,33 +26,64 @@ export class UsersService {
     return user;
   }
 
-  async create(userDetails: Partial<User>) {
+  async findOne(
+    query: FindOptionsWhere<User> | FindOptionsWhere<User>[],
+    throwError = true,
+    options = null,
+  ): Promise<Partial<User>> {
+    const existingUser = await this.userRepository.findOne(query, options);
+
+    if (throwError && !existingUser) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return existingUser;
+  }
+
+  async create(userDetails: CreateUserDto) {
+    const existingUser = await this.findOne(
+      { phone: userDetails.phone },
+      false,
+    );
+
+    if (existingUser) {
+      throw new HttpException(
+        'A user with this phone number already exist',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
     try {
-      const newUser = await this.userRepository.create({
-        ...userDetails,
-        created_at: new Date(),
-      });
+      const createdUser = await this.userRepository.create(
+        {
+          ...userDetails,
+          created_at: new Date(),
+        },
+        queryRunner,
+      );
 
-      // Create wallet with initial balance of 0
+      await this.walletsService.create(
+        { user_id: createdUser.id },
+        queryRunner,
+      );
 
-      await this.walletsService.create(newUser.id, 0);
-      return newUser;
+      await queryRunner.commitTransaction();
+
+      return createdUser.toPayload();
     } catch (error) {
+      this.logger.error(error);
       await queryRunner.rollbackTransaction();
-      throw error;
+
+      throw new HttpException(
+        'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     } finally {
       await queryRunner.release();
     }
-  }
-  catch(userError) {
-    throw new HttpException(
-      'Failed to create user: ' + userError.message,
-      HttpStatus.INTERNAL_SERVER_ERROR,
-    );
   }
 
   update(id: number, updateUserDetails: Partial<User>) {

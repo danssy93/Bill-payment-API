@@ -1,12 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsNumber, Min } from 'class-validator';
 
 export class FundWalletDto {
-  @ApiProperty({ example: 100 })
+  @IsNotEmpty({ message: 'Amount is required.' })
   @IsNumber()
-  @IsNotEmpty()
-  amount: number;
-
-  @IsNotEmpty()
-  user_id: string;
+  @Min(100, { message: 'The minimum amount is 100.' })
+  @ApiProperty({
+    description: 'Amount to purchase',
+    example: 100,
+    required: true,
+  })
+  readonly amount: number;
 }

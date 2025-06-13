@@ -1,4 +1,4 @@
 export * from './user.repository';
 export * from './ledger.repository';
 export * from './wallet.repository';
-export * from './power-trans';
+export * from './power-transaction.repository';

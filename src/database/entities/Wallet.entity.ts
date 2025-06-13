@@ -9,16 +9,18 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from './User';
-import { Ledger } from './Ledger';
+import { User } from './User.entity';
+import { Ledger } from './Ledger.entity';
+import { WALLETS } from '../DBTableNames';
 
-@Entity({ name: 'wallets' })
+@Entity({ name: WALLETS })
 export class Wallet {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Index()
-  user_id: string;
+  @Column()
+  user_id: number;
 
   @Column({ type: 'decimal', precision: 15, scale: 2, default: 0.0 })
   balance: number;

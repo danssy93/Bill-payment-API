@@ -1,1 +1,2 @@
-export * from './customer-refresh-token.strategy';
+export * from './customer-jwt.strategy';
+export * from './public.strategy';

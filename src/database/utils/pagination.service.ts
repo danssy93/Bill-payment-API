@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { GenericObjectType } from 'src/shared';
+import { GenericObjectType } from 'src/common/generic-object';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 
 export interface PaginationInfo {

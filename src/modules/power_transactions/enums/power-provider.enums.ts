@@ -1,51 +1,39 @@
 export const PowerDiscoProviders = [
   {
     name: 'AEDC',
-    code: 'AEDC',
+    slug: 'AEDC',
   },
-  // {
-  //   name: 'APLE',
-  //   code: 'APLE'
-  // },
   {
     name: 'BEDC',
-    code: 'BEDC',
+    slug: 'BEDC',
   },
   {
     name: 'EEDC',
-    code: 'EEDC',
+    slug: 'EEDC',
   },
   {
     name: 'EKEDC',
-    code: 'EKEDC',
+    slug: 'EKEDC',
   },
   {
     name: 'IBEDC',
-    code: 'IBEDC',
+    slug: 'IBEDC',
   },
-  {
-    name: 'IKEJA Electric',
-    code: 'IKEJA',
-  },
-  // {
-  //   name: 'JEDC',
-  //   code: 'JEDC'
-  // },
   {
     name: 'KAEDC',
-    code: 'KAEDC',
+    slug: 'KAEDC',
   },
   {
     name: 'KEDC',
-    code: 'KEDC',
+    slug: 'KEDC',
   },
   {
     name: 'PHEDC',
-    code: 'PHEDC',
+    slug: 'PHEDC',
   },
   {
     name: 'YEDC',
-    code: 'YEDC',
+    slug: 'YEDC',
   },
 ];
 

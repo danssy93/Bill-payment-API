@@ -1,17 +1,19 @@
 import { Module } from '@nestjs/common';
 import { PowerTransactionService } from './services/power_transactions/power_transactions.service';
 import { PowerTransactionController } from './controllers/power_transactions/power_transactions.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersModule } from '../users/users.module';
-import { LedgersModule } from '../ledgers/ledgers.module';
+import { PowerTransactionRepository } from 'src/database/repositories';
+import { DatabaseModule } from 'src/database/database.module';
+import { WalletsModule } from '../wallets/wallets.module';
+import { PowerTransactionManagementService } from './services/power_transactions/power-transaction-management.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([PowerTransactionsModule]),
-    UsersModule,
-    LedgersModule,
+  imports: [DatabaseModule.forFeature(), WalletsModule],
+  providers: [
+    PowerTransactionService,
+    PowerTransactionRepository,
+    PowerTransactionManagementService,
   ],
-  providers: [PowerTransactionService],
+  exports: [PowerTransactionService],
   controllers: [PowerTransactionController],
 })
 export class PowerTransactionsModule {}

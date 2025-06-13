@@ -1,23 +1,30 @@
-import { HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { User } from 'src/database/entities';
 import { PurchaseRequestDto } from 'src/modules/power_transactions/dtos/purchase.dto';
 import { ValidateMeterRequestDto } from 'src/modules/power_transactions/dtos/validate-meter.dto';
-import { PowerProviders } from 'src/modules/power_transactions/enums/power-provider.enums';
-import { TransactionStatus } from 'src/modules/power_transactions/enums/transaction-status.enum';
 import {
   IPowerValidationResponse,
   IValidatePowerResponse,
   IVendPowerResponse,
 } from 'src/modules/power_transactions/interfaces';
 import { Helpers } from 'src/common/utility.helpers';
-import { WalletService } from 'wallets/wallets.service';
+import { IDebitResponsePayload } from 'src/modules/wallets/interfaces/wallet.interface';
+import {
+  TransactionStatus,
+  TransactionType,
+} from 'src/modules/wallets/enums/wallet.enum';
+import { WalletService } from 'src/modules/wallets/services/wallets/wallets.service';
+import { PowerTransactionManagementService } from './power-transaction-management.service';
 
 @Injectable()
 export class PowerTransactionService {
   private readonly logger = new Logger(PowerTransactionService.name);
 
+  private readonly FAILED_TRANSACTION = '0000000000';
+  private readonly IN_PROGRESS = '0000000001';
+
   constructor(
-    private readonly managePowerService: PowerTransactionService,
+    private readonly managePowerService: PowerTransactionManagementService,
     private readonly paymentModeService: WalletService,
   ) {}
 
@@ -27,95 +34,41 @@ export class PowerTransactionService {
   ): Promise<IValidatePowerResponse> {
     const { id } = user;
 
-    const rechargeType =
-      `${payload.provider}_${payload.meter_type}_${ServiceType.POWER}`.toLowerCase();
-
-    const commission: ICommissionResult =
-      await this.commissionService.getUserCommission(
-        id,
-        rechargeType,
-        payload.amount,
-      );
-
     const dateCreated = new Date(Helpers.getWATDateTimestamp());
+    const transactionId = Helpers.generatReference();
 
-    const response = await this.managePowerService.create({
+    await this.managePowerService.create({
       user_id: id,
       ...payload,
-      client_validation_request_payload: JSON.stringify(payload),
-      transaction_date: dateCreated,
       created_at: dateCreated,
-    });
-
-    const transactionId = response.id.replace(/-/g, '').toUpperCase();
-
-    const thirdPartyService: IBillPaymentService =
-      await this.orchestratorService.getService(
-        `${payload.provider}_${payload.meter_type}`.toLowerCase(),
-      );
-
-    const validateResponse = await thirdPartyService.verify({
-      receiver: payload.receiver,
-      service_type: ServiceType.POWER,
-      provider: payload.provider,
-      meter_type: payload.meter_type,
-    });
-
-    const clientResponse: IPowerValidationResponse = {
-      minimum_purchase: validateResponse.validate_details.minimum_purchase,
-      maximum_purchase: validateResponse.validate_details.maximum_purchase,
-      receiver: payload.receiver,
-      provider:
-        payload.provider == PowerProviders.IKEJA
-          ? 'Ikeja Electric'
-          : payload.provider,
       transaction_id: transactionId,
-      commission_breakdown: commission,
-      amount: payload.amount.toString(),
-      transaction_date: response.transaction_date.toLocaleString(),
-      customer_name: validateResponse.validate_details.customer_name,
-      customer_info: validateResponse.validate_details.customer_info,
-      meter_type: payload.meter_type,
+    });
+
+    const validateResponse = {
+      customer_name: 'JOHN DOE',
+      customer_address: 'FCT ABUJA',
+      status: TransactionStatus.PENDING,
     };
 
-    const dateUpdated = new Date(Helpers.getWATDateTimestamp());
+    const clientResponse: IPowerValidationResponse = {
+      meter_number: payload.meter_number,
+      provider: payload.provider,
+      transaction_id: transactionId,
+      customer_name: validateResponse.customer_name,
+      customer_address: validateResponse.customer_address,
+      meter_type: payload.meter_type,
+      created_at: dateCreated,
+      status: validateResponse.status,
+    };
 
     await this.managePowerService.update(
-      { id: response.id, user_id: id },
+      { transaction_id: transactionId, user_id: id },
       {
-        minimum_purchase: validateResponse.validate_details.minimum_purchase,
-        maximum_purchase: validateResponse.validate_details.maximum_purchase,
-        customer_name: validateResponse.validate_details.customer_name,
-        customer_info: validateResponse.validate_details.customer_info,
-        transaction_id: transactionId,
-        api_used: validateResponse.api_used,
-        client_validation_request_payload: JSON.stringify(payload),
-        client_validation_response_payload: JSON.stringify(clientResponse),
-        api_validation_request_payload: JSON.stringify(
-          validateResponse.api_request,
-        ),
-        api_validation_response_payload: JSON.stringify(
-          validateResponse.api_response,
-        ),
-        date_modified: dateUpdated,
-        date_completed: dateUpdated,
-        updated_at: dateUpdated,
+        customer_name: validateResponse.customer_name,
+        customer_address: validateResponse.customer_address,
+        updated_at: dateCreated,
       },
     );
-
-    if (validateResponse.validate_details.minimum_purchase > payload.amount) {
-      return {
-        status: TransactionStatus.FAILED,
-        message: `The transaction amount must be at least ₦${validateResponse.validate_details.minimum_purchase}.`,
-      };
-    }
-
-    if (validateResponse.validate_details.maximum_purchase < payload.amount) {
-      return {
-        status: TransactionStatus.FAILED,
-        message: `The transaction amount must not exceed ₦${validateResponse.validate_details.maximum_purchase}.`,
-      };
-    }
 
     if (validateResponse.status === TransactionStatus.FAILED) {
       return {
@@ -131,12 +84,8 @@ export class PowerTransactionService {
     };
   }
 
-  async vend(
-    payload: PurchaseRequestDto,
-    user: ICurrentUserDetails,
-  ): Promise<IVendPowerResponse> {
-    const { id: userId, email, phone } = user;
-    payload.pin = '******';
+  async vend(payload: PurchaseRequestDto, user): Promise<IVendPowerResponse> {
+    const { id: userId } = user;
 
     const transaction = await this.managePowerService.findOne(
       {
@@ -147,49 +96,22 @@ export class PowerTransactionService {
     );
 
     if (transaction.status !== TransactionStatus.PENDING) {
-      throw new AppError(
+      throw new HttpException(
         'Transaction already processed',
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    if (
-      transaction?.minimum_purchase &&
-      parseFloat(transaction?.minimum_purchase) > transaction.amount
-    ) {
-      throw new AppError(
-        `The amount you are trying to vend is less than the minimum vend amount of NGN${transaction.minimum_purchase}`,
-        HttpStatus.EXPECTATION_FAILED,
-      );
-    }
-
-    const thirdPartyService: IBillPaymentService =
-      await this.orchestratorService.getService(
-        `${transaction.provider}_${transaction.meter_type}`.toLowerCase(),
-      );
-
-    const rechargeType = `${transaction.provider.toUpperCase()}_${ServiceType.POWER}`;
-
-    const commission: ICommissionResult =
-      await this.commissionService.getUserCommission(
-        userId,
-        rechargeType,
-        transaction.amount,
-      );
-
-    this.paymentModeService.setStrategy(UserType.CUSTOMER);
-
     const paymentResponse: IDebitResponsePayload =
       await this.paymentModeService.debitWallet(
         {
           user_id: userId,
-          amount: commission.amount,
-          charge_amount: commission.charge_amount,
-          transaction_id: transaction.transaction_id,
-          recharge_type: rechargeType,
-          service: ServiceType.POWER,
         },
-        { user_id: userId, type: WalletType.MAIN },
+        {
+          user_id: userId,
+          amount: payload.amount,
+          transaction_id: transaction.transaction_id,
+        },
       );
 
     if (paymentResponse.status === TransactionStatus.FAILED) {
@@ -198,17 +120,10 @@ export class PowerTransactionService {
       await this.managePowerService.update(
         { user_id: userId, transaction_id: transaction.transaction_id },
         {
-          is_resolved: false,
           status: TransactionStatus.FAILED,
-          wallet_request_payload: paymentResponse.wallet_request_payload,
-          wallet_response_payload: paymentResponse.wallet_response_payload,
-          payment_mode:
-            PaymentMode[this.paymentModeService.paymentMethod().toUpperCase()],
           amount: paymentResponse.amount,
-          charge_amount: paymentResponse.amount_charged,
-          date_completed: dateUpdated,
-          date_modified: dateUpdated,
           updated_at: dateUpdated,
+          transaction_type: TransactionType.CREDIT,
         },
       );
 
@@ -216,99 +131,91 @@ export class PowerTransactionService {
         message: paymentResponse.message,
         status: TransactionStatus.FAILED,
         payload: {
-          amount: transaction.amount,
-          receiver: transaction.receiver,
+          token: 'N/A',
+          units: 'N/A',
+          amount: payload.amount,
+          meter_number: transaction.meter_number,
           transaction_id: payload.transaction_id,
           status: TransactionStatus.FAILED,
-          transaction_date: transaction.transaction_date.toLocaleString(),
+          created_at: transaction.created_at.toLocaleString(),
           provider: transaction.provider,
         },
       };
     }
 
-    const apiReference = Helpers.generateRequestId();
+    let status: TransactionStatus;
+    switch (transaction.meter_number) {
+      case this.FAILED_TRANSACTION:
+        status = TransactionStatus.FAILED;
+        break;
+      case this.IN_PROGRESS:
+        status = TransactionStatus.IN_PROGRESS;
+        break;
+      default:
+        status = TransactionStatus.SUCCESSFUL;
+        break;
+    }
 
-    const vendResponse: IBillPaymentVendResponsePayload =
-      await thirdPartyService.vend({
-        receiver: transaction.receiver,
-        amount: transaction.amount,
-        provider: transaction.provider,
-        service_type: ServiceType.POWER,
-        api_reference: apiReference,
-      });
+    const vendResponse = {
+      phone_number: '07084354773',
+      amount: payload.amount,
+      network: 'ABUJA DISCO Prepaid',
+      code: '200',
+      tx_ref: 'CF-FLYAPI-20250510012956756440205',
+      reference: transaction.transaction_id,
+      token: '2099-0067-6182-3425-9586',
+      units: '10',
+      status,
+    };
 
     let message: string;
+    let is_resolved: boolean;
     let transactionStatus: TransactionStatus;
     if (vendResponse.status == TransactionStatus.SUCCESSFUL) {
-      if (transaction.meter_type.toLowerCase() === MeterTypes.PREPAID) {
-        const token = vendResponse?.vend_details
-          ? vendResponse.vend_details?.token?.trim()
-          : 'N/A';
-
-        transactionStatus =
-          token.toLowerCase() != 'n/a' && token.length > 8
-            ? TransactionStatus.SUCCESSFUL
-            : TransactionStatus.IN_PROGRESS;
-      } else if (transaction.meter_type.toLowerCase() === MeterTypes.POSTPAID) {
-        transactionStatus = TransactionStatus.SUCCESSFUL;
-      } else {
-        transactionStatus = TransactionStatus.IN_PROGRESS;
-      }
-
+      transactionStatus = TransactionStatus.SUCCESSFUL;
       message = 'Transaction successful';
+      is_resolved = true;
     } else if (vendResponse.status == TransactionStatus.FAILED) {
       transactionStatus = TransactionStatus.FAILED;
-
       message = 'Transaction failed, try again';
-    } else if (vendResponse.status == TransactionStatus.IN_PROGRESS) {
+      is_resolved = false;
+    } else {
       transactionStatus = TransactionStatus.IN_PROGRESS;
-
       message = 'Transaction in progress';
+      is_resolved = false;
     }
 
     const clientResponse: IVendPowerResponse = {
       message,
       status: vendResponse.status,
       payload: {
-        amount: transaction.amount,
-        receiver: transaction.receiver,
+        amount: payload.amount,
+        token: vendResponse.token,
+        units: vendResponse.units,
+        meter_number: transaction.meter_number,
         transaction_id: payload.transaction_id,
         status: vendResponse.status,
-        transaction_date: transaction.transaction_date.toLocaleString(),
+        created_at: transaction.created_at.toLocaleString(),
         provider: transaction.provider,
       },
     };
 
     const dateUpdated = new Date(Helpers.getWATDateTimestamp());
 
-    const updatedTransaction = await this.managePowerService.update(
+    await this.managePowerService.update(
       { user_id: userId, transaction_id: transaction.transaction_id },
       {
-        is_resolved:
-          transactionStatus === TransactionStatus.SUCCESSFUL ? true : false,
-        api_reference: apiReference,
+        transaction_type: TransactionType.DEBIT,
         status: transactionStatus,
-        token: vendResponse?.vend_details?.token,
-        units: vendResponse?.vend_details?.units,
-        api_vend_response_payload: JSON.stringify(vendResponse.api_response),
-        api_vend_request_payload: JSON.stringify(vendResponse.api_request),
-        payment_mode:
-          PaymentMode[this.paymentModeService.paymentMethod().toUpperCase()],
-        commission_percentage: commission.commission_percentage,
-        commission_amount: commission.profit_amount.toString(),
+        token: vendResponse.token,
+        units: vendResponse.units,
         payment_reference: paymentResponse.payment_reference,
         amount: paymentResponse.amount,
-        charge_amount: paymentResponse.amount_charged,
-        balance_after: paymentResponse.balance_after,
-        balance_before: paymentResponse.balance_before,
-        client_vend_request_payload: JSON.stringify(payload),
-        client_vend_response_payload: JSON.stringify(clientResponse),
-        wallet_request_payload: paymentResponse.wallet_request_payload,
-        wallet_response_payload: paymentResponse.wallet_response_payload,
-        date_completed: dateUpdated,
-        date_modified: dateUpdated,
         updated_at: dateUpdated,
+        is_resolved,
       },
     );
+
+    return clientResponse;
   }
 }
