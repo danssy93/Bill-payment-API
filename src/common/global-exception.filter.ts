@@ -11,8 +11,8 @@ import AppValidationError from './app-validation';
 import { ResponseFormat } from './ResponseFormat';
 
 @Catch()
-export class GlobalExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(GlobalExceptionFilter.name);
+export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpExceptionFilter.name);
 
   catch(exception, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -22,6 +22,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       'GLOBAL APPLICATION SLACK TRACE:',
       JSON.stringify(exception),
     );
+
+    console.log(exception);
 
     if (exception instanceof AppValidationError) {
       ResponseFormat.failure(
@@ -49,12 +51,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         response,
         'Invalid input type',
         HttpStatus.BAD_REQUEST,
-      );
-    } else if (exception.status === 429) {
-      ResponseFormat.failure(
-        response,
-        'Too many requests. Please try again later.',
-        HttpStatus.TOO_MANY_REQUESTS,
       );
     } else {
       ResponseFormat.failure(

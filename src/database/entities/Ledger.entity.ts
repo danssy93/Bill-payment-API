@@ -7,9 +7,9 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { User } from './User';
-import { Wallet } from './Wallet';
-import { PowerTransaction } from './PowerTransaction';
+import { User } from './User.entity';
+import { Wallet } from './Wallet.entity';
+import { PowerTransaction } from './PowerTransaction.entity';
 import { TransactionType } from 'src/modules/wallets/enums/wallet.enum';
 import { LEDGER } from '../DBTableNames';
 

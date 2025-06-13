@@ -25,7 +25,7 @@ export class CustomerJwtGuard extends AuthGuard('customer-jwt') {
   }
 
   handleRequest(err, user) {
-    if (err || !user || !user.refresh_token) {
+    if (err || !user) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 

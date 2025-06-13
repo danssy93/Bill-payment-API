@@ -1,7 +1,7 @@
 // src/ledgers/services/ledgers/ledgers.service.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Ledger } from 'src/database/entities/Ledger';
+import { Ledger } from 'src/database/entities/Ledger.entity';
 import { Repository, QueryRunner } from 'typeorm';
 
 @Injectable()

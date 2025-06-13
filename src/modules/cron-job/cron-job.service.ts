@@ -15,7 +15,7 @@ export class CronJobService {
   /**
    * Scheduled job that runs at midnight to calculate daily interest
    */
-  @Cron('*/2 * * * *') // Runs every 20 minutes
+  @Cron('*/2 * * * *') // Runs every 2 minutes
   async handleFailedTransaction(): Promise<void> {
     try {
       this.logger.log('Refunding failed transaction calculation job');
@@ -35,7 +35,7 @@ export class CronJobService {
    * Scheduled job that runs at midnight to calculate daily interest
    */
   // @Cron(CronExpression.EVERY_10_SECONDS)
-  @Cron('*/2 * * * *') // Runs every 20 minutes
+  @Cron('*/2 * * * *') // Runs every 2 minutes
   async handleRequeryTransaction(): Promise<void> {
     try {
       this.logger.log('Starting daily interest calculation job');

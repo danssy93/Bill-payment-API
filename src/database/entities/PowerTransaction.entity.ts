@@ -8,8 +8,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from './User';
-import { Ledger } from './Ledger';
+import { User } from './User.entity';
+import { Ledger } from './Ledger.entity';
 import { MeterTypes } from 'src/modules/power_transactions/enums/power-provider.enums';
 import {
   TransactionStatus,
@@ -47,7 +47,7 @@ export class PowerTransaction {
   requery_count: number;
 
   @Index()
-  @Column({ type: 'varchar', length: 30 })
+  @Column({ type: 'varchar', length: 30, nullable: true })
   transaction_type: TransactionType;
 
   @Index()

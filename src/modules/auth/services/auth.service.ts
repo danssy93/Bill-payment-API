@@ -33,7 +33,7 @@ export class AuthService {
 
     const existingUser = await this.userService.findOne(
       {
-        phone: phone.replace('+', ''),
+        phone,
       },
       true,
     );

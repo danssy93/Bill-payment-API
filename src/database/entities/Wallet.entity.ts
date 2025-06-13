@@ -9,8 +9,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from './User';
-import { Ledger } from './Ledger';
+import { User } from './User.entity';
+import { Ledger } from './Ledger.entity';
 import { WALLETS } from '../DBTableNames';
 
 @Entity({ name: WALLETS })

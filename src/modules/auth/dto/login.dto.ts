@@ -15,7 +15,7 @@ export class BaseLoginDto {
   readonly password: string;
 
   @ApiProperty({
-    example: '+2348031234567',
+    example: '08012345678',
     title: ' Phone number',
     required: true,
   })

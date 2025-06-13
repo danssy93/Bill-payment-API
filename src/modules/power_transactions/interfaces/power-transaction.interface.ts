@@ -10,7 +10,6 @@ export interface IPowerValidationResponse {
   provider: string;
   meter_number: string;
   created_at: Date;
-  amount: string;
   status: TransactionStatus;
   transaction_id: string;
   customer_name: string;
@@ -27,6 +26,8 @@ export interface IVendPowerResponse {
 export interface IVendPowerResponsePayload {
   amount: number;
   meter_number: string;
+  token: string;
+  units: string;
   provider: string;
   created_at: string;
   transaction_id: string;

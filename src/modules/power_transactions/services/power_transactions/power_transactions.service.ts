@@ -9,7 +9,10 @@ import {
 } from 'src/modules/power_transactions/interfaces';
 import { Helpers } from 'src/common/utility.helpers';
 import { IDebitResponsePayload } from 'src/modules/wallets/interfaces/wallet.interface';
-import { TransactionStatus } from 'src/modules/wallets/enums/wallet.enum';
+import {
+  TransactionStatus,
+  TransactionType,
+} from 'src/modules/wallets/enums/wallet.enum';
 import { WalletService } from 'src/modules/wallets/services/wallets/wallets.service';
 import { PowerTransactionManagementService } from './power-transaction-management.service';
 
@@ -51,7 +54,6 @@ export class PowerTransactionService {
       meter_number: payload.meter_number,
       provider: payload.provider,
       transaction_id: transactionId,
-      amount: payload.amount.toString(),
       customer_name: validateResponse.customer_name,
       customer_address: validateResponse.customer_address,
       meter_type: payload.meter_type,
@@ -84,7 +86,6 @@ export class PowerTransactionService {
 
   async vend(payload: PurchaseRequestDto, user): Promise<IVendPowerResponse> {
     const { id: userId } = user;
-    payload.pin = '******';
 
     const transaction = await this.managePowerService.findOne(
       {
@@ -105,12 +106,10 @@ export class PowerTransactionService {
       await this.paymentModeService.debitWallet(
         {
           user_id: userId,
-          amount: transaction.amount,
-          transaction_id: transaction.transaction_id,
         },
         {
           user_id: userId,
-          amount: transaction.amount,
+          amount: payload.amount,
           transaction_id: transaction.transaction_id,
         },
       );
@@ -124,6 +123,7 @@ export class PowerTransactionService {
           status: TransactionStatus.FAILED,
           amount: paymentResponse.amount,
           updated_at: dateUpdated,
+          transaction_type: TransactionType.CREDIT,
         },
       );
 
@@ -131,7 +131,9 @@ export class PowerTransactionService {
         message: paymentResponse.message,
         status: TransactionStatus.FAILED,
         payload: {
-          amount: transaction.amount,
+          token: 'N/A',
+          units: 'N/A',
+          amount: payload.amount,
           meter_number: transaction.meter_number,
           transaction_id: payload.transaction_id,
           status: TransactionStatus.FAILED,
@@ -156,7 +158,7 @@ export class PowerTransactionService {
 
     const vendResponse = {
       phone_number: '07084354773',
-      amount: transaction.amount,
+      amount: payload.amount,
       network: 'ABUJA DISCO Prepaid',
       code: '200',
       tx_ref: 'CF-FLYAPI-20250510012956756440205',
@@ -187,7 +189,9 @@ export class PowerTransactionService {
       message,
       status: vendResponse.status,
       payload: {
-        amount: transaction.amount,
+        amount: payload.amount,
+        token: vendResponse.token,
+        units: vendResponse.units,
         meter_number: transaction.meter_number,
         transaction_id: payload.transaction_id,
         status: vendResponse.status,
@@ -201,9 +205,10 @@ export class PowerTransactionService {
     await this.managePowerService.update(
       { user_id: userId, transaction_id: transaction.transaction_id },
       {
+        transaction_type: TransactionType.DEBIT,
         status: transactionStatus,
-        token: vendResponse?.token,
-        units: vendResponse?.units,
+        token: vendResponse.token,
+        units: vendResponse.units,
         payment_reference: paymentResponse.payment_reference,
         amount: paymentResponse.amount,
         updated_at: dateUpdated,

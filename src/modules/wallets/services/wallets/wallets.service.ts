@@ -58,11 +58,11 @@ export class WalletService {
 
       await this.ledgerService.create(
         {
-          user_id: wallet.user_id,
           amount: +payload.amount,
-          balance_before: wallet.balance,
+          user_id: wallet.user_id,
           balance_after: balanceAfter,
           type: payload.transaction_type,
+          balance_before: wallet.balance,
           transaction_id: payload.transaction_id,
         },
         queryRunner,
@@ -71,13 +71,13 @@ export class WalletService {
       await queryRunner.commitTransaction();
 
       return {
-        user_id: payload.user_id,
-        payment_reference: Helpers.generatReference(),
         amount: +payload.amount,
-        balance_before: wallet.balance,
-        balance_after: balanceAfter,
         balance: wallet.balance,
+        user_id: payload.user_id,
+        balance_after: balanceAfter,
+        balance_before: wallet.balance,
         status: TransactionStatus.SUCCESSFUL,
+        payment_reference: Helpers.generatReference(),
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -116,7 +116,7 @@ export class WalletService {
       if (Number(wallet.balance) < Number(payload.amount)) {
         throw new HttpException(
           'Transaction failed due to insufficient wallet balance',
-          HttpStatus.NOT_FOUND,
+          HttpStatus.BAD_REQUEST,
         );
       }
 

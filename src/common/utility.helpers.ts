@@ -7,7 +7,7 @@ import { CONFIGURATION } from 'src/libs';
 
 export class Helpers {
   static generatReference() {
-    const paymentRef = `BL-${randomUUID().replace(/-/g, '').toUpperCase()}`;
+    const paymentRef = `${randomUUID().replace(/-/g, '').toUpperCase()}`;
     return paymentRef;
   }
 

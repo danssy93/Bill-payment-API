@@ -5,15 +5,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Wallet } from './Wallet';
-import { PowerTransaction } from './PowerTransaction';
-import { Ledger } from './Ledger';
+import { Wallet } from './Wallet.entity';
+import { PowerTransaction } from './PowerTransaction.entity';
+import { Ledger } from './Ledger.entity';
 import { USER } from '../DBTableNames';
 
 @Entity({ name: USER })
@@ -37,7 +36,6 @@ export class User {
   updated_at: Date;
 
   @OneToOne(() => Wallet, (wallet) => wallet.user)
-  @JoinColumn()
   wallet: Wallet;
 
   @OneToMany(
@@ -70,6 +68,7 @@ export class User {
     return {
       id: this.id,
       phone: this.phone,
+      name: this.name,
       created_at: this.created_at,
     };
   }

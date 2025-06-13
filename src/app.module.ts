@@ -7,8 +7,8 @@ import { UsersModule } from './modules/users/users.module';
 import { WalletsModule } from './modules/wallets/wallets.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER } from '@nestjs/core';
-import { GlobalExceptionFilter } from './common/global-exception.filter';
 import { CronJobModule } from './modules/cron-job/cron-job.module';
+import { HttpExceptionFilter } from './common/global-exception.filter';
 
 @Module({
   imports: [
@@ -24,7 +24,7 @@ import { CronJobModule } from './modules/cron-job/cron-job.module';
   providers: [
     {
       provide: APP_FILTER,
-      useClass: GlobalExceptionFilter,
+      useClass: HttpExceptionFilter,
     },
   ],
 })
