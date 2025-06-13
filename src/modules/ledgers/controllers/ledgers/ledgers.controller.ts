@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Ledger } from 'src/database/entities';
-import { LedgerService } from 'src/ledgers/services/ledgers/ledgers.service';
+import { LedgerService } from '../../services/ledgers/ledgers.service';
 
 @ApiTags('Ledger')
 @Controller('ledger')

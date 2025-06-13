@@ -21,4 +21,5 @@ export class PurchaseRequestDto {
     required: true,
   })
   readonly amount: number;
+  pin: string;
 }

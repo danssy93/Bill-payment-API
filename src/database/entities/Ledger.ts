@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -9,18 +10,20 @@ import {
 import { User } from './User';
 import { Wallet } from './Wallet';
 import { PowerTransaction } from './PowerTransaction';
-import { LedgerServiceType } from 'src/modules/ledgers/enums/ledger-type.enum';
+import { TransactionType } from 'src/modules/wallets/enums/wallet.enum';
+import { LEDGER } from '../DBTableNames';
 
 export enum PaymentType {
   FUNDING = 'funding',
   ELECTRICITY_PURCHASE = 'electricity_purchase',
 }
 
-@Entity({ name: 'ledgers' })
+@Entity({ name: LEDGER })
 export class Ledger {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Index()
   @Column()
   user_id: number;
 
@@ -49,12 +52,9 @@ export class Ledger {
   })
   status: 'pending' | 'successful' | 'failed' | 'reversed';
 
-  @Column({
-    type: 'enum',
-    enum: LedgerServiceType,
-    nullable: true,
-  })
-  service: LedgerServiceType;
+  @Index()
+  @Column({ type: 'varchar', length: 30 })
+  type: TransactionType;
 
   @OneToOne(() => PowerTransaction, (pt) => pt.ledger)
   power_transaction: PowerTransaction;

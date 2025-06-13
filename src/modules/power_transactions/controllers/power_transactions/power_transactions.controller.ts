@@ -18,16 +18,15 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Response } from 'express';
-
-import { ResponseFormat } from 'src/shared';
 import { ValidateMeterRequestDto } from 'src/modules/power_transactions/dtos/validate-meter.dto';
 import { PurchaseRequestDto } from 'src/modules/power_transactions/dtos/purchase.dto';
 import { User } from 'src/database/entities/User';
 import { PowerDiscoProviders } from 'src/modules/power_transactions/enums/power-provider.enums';
-import { TransactionStatus } from 'src/modules/power_transactions/enums/transaction-status.enum';
 import { PowerTransactionService } from 'src/modules/power_transactions/services/power_transactions/power_transactions.service';
-import { CustomerJwtGuard } from 'src/auth/guards';
 import { CurrentUser } from 'src/common/current-user.guard';
+import { ResponseFormat } from 'src/common/ResponseFormat';
+import { CustomerJwtGuard } from 'src/modules/auth/guards';
+import { TransactionStatus } from 'src/modules/wallets/enums/wallet.enum';
 
 @ApiTags('Customer Power Purchase Module')
 @Controller('power')

@@ -1,8 +1,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { User } from 'src/database/entities';
 import { UserRepository } from 'src/database/repositories';
-import { WalletService } from 'wallets/wallets.service';
-import { DataSource } from 'typeorm';
+import { WalletService } from 'src/modules/wallets/services/wallets/wallets.service';
+import { DataSource, FindOptionsWhere } from 'typeorm';
 
 @Injectable()
 export class UsersService {
@@ -28,6 +28,20 @@ export class UsersService {
     return user;
   }
 
+  async findOne(
+    query: FindOptionsWhere<User> | FindOptionsWhere<User>[],
+    throwError = true,
+    options = null,
+  ): Promise<Partial<User>> {
+    const existingUser = await this.userRepository.findOne(query, options);
+
+    if (throwError && !existingUser) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return existingUser;
+  }
+
   async create(userDetails: Partial<User>) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -41,7 +55,7 @@ export class UsersService {
 
       // Create wallet with initial balance of 0
 
-      await this.walletsService.create(newUser.id, 0);
+      await this.walletsService.create({ user_id: newUser.id }, queryRunner);
       return newUser;
     } catch (error) {
       await queryRunner.rollbackTransaction();

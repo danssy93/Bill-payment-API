@@ -1,9 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as compression from 'compression';
-import * as express from 'express';
+import compression from 'compression';
+import express from 'express';
 import helmet from 'helmet';
+import { Logger } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,19 +16,13 @@ async function bootstrap() {
 
   app.enableCors({
     origin: '*',
-    methods: 'POST, DELETE, GET, PATCH',
+    methods: 'POST, DELETE, GET, PATCconsoleH',
     credentials: true,
     allowedHeaders:
       'Content-Type, Authorization, X-Requested-With, token, Accept, Api-Key',
   });
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Backend Assessment')
-    .setDescription('The API description')
-    .setVersion('1.0')
-    .build();
-
-  const config = new DocumentBuilder()
     .setTitle('Nest API')
     .setDescription('API to process Electricity payment from a Bill Vending')
     .setVersion('1.0')
@@ -37,8 +32,9 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
 
   const port = process.env.PORT ?? 3000;
+
   await app.listen(port, () => {
-    console.warn(` 
+    Logger.warn(` 
       --------------------------------------
       Application Server Sucessful!
       API Docs: localhost:${port}/api

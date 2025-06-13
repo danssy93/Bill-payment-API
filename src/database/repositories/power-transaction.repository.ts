@@ -5,7 +5,7 @@ import { BaseRepository } from './base.repository';
 import { PowerTransaction } from '../entities';
 
 @Injectable()
-export class UserRepository extends BaseRepository<PowerTransaction> {
+export class PowerTransactionRepository extends BaseRepository<PowerTransaction> {
   protected readonly logger = new Logger(PowerTransactionRepository.name);
 
   constructor(

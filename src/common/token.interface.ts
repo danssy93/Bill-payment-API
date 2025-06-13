@@ -10,7 +10,7 @@ export type RefreshTokenPayload = {
 
 export interface IJwtDecodedToken {
   user_id: string;
-  sub: string;
+  sub: number;
   user_type: string;
   identifier: string;
   wallet_id: string;

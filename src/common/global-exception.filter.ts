@@ -7,14 +7,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
-
 import AppValidationError from './app-validation';
+import { ResponseFormat } from './ResponseFormat';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
 
-  catch(exception: any, host: ArgumentsHost) {
+  catch(exception, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 

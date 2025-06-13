@@ -10,20 +10,21 @@ import {
 } from 'typeorm';
 import { User } from './User';
 import { Ledger } from './Ledger';
-import {
-  PaymentMode,
-  TransactionStatus,
-} from 'src/modules/power_transactions/enums/transaction-status.enum';
 import { MeterTypes } from 'src/modules/power_transactions/enums/power-provider.enums';
+import {
+  TransactionStatus,
+  TransactionType,
+} from 'src/modules/wallets/enums/wallet.enum';
+import { POWER_TRANSACTIONS } from '../DBTableNames';
 
-@Entity({ name: 'power_transactions' })
+@Entity({ name: POWER_TRANSACTIONS })
 export class PowerTransaction {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Index()
-  @Column({ type: 'uuid' })
-  user_id: string;
+  @Column()
+  user_id: number;
 
   @Column({ length: 80 })
   @Index()
@@ -38,6 +39,16 @@ export class PowerTransaction {
 
   @Column({ length: 50, type: 'varchar', nullable: true })
   token: string;
+
+  @Column({ default: true })
+  is_resolved: boolean;
+
+  @Column({ default: 0, type: 'int' })
+  requery_count: number;
+
+  @Index()
+  @Column({ type: 'varchar', length: 30 })
+  transaction_type: TransactionType;
 
   @Index()
   @Column({ type: 'enum', enum: MeterTypes, nullable: true })
@@ -64,10 +75,6 @@ export class PowerTransaction {
   @Index()
   @Column({ length: 40, nullable: true })
   payment_reference: string;
-
-  @Index()
-  @Column({ type: 'enum', enum: PaymentMode, nullable: true })
-  payment_mode: PaymentMode;
 
   @Index()
   @Column({ length: 50, nullable: true })

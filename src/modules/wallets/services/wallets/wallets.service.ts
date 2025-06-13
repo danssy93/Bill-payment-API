@@ -4,17 +4,14 @@ import { WalletRepository } from 'src/database/repositories/wallet.repository';
 import { Wallet } from 'src/database/entities';
 import { Helpers } from 'src/common/utility.helpers';
 import { LedgerService } from 'src/modules/ledgers/services/ledgers/ledgers.service';
-import {
-  TransactionStatus,
-  TransactionType,
-} from 'src/modules/power_transactions/enums/transaction-status.enum';
+import { GenericObjectType } from 'src/common/generic-object';
 import {
   ICreditRequestPayload,
   ICreditResponsePayload,
   IDebitRequestPayload,
   IDebitResponsePayload,
-} from '../src/modules/wallets/interfaces/wallet.interface';
-import { GenericObjectType } from 'src/common/generic-object';
+} from '../../interfaces/wallet.interface';
+import { TransactionStatus, TransactionType } from '../../enums/wallet.enum';
 
 @Injectable()
 export class WalletService {
@@ -75,7 +72,7 @@ export class WalletService {
 
       return {
         user_id: payload.user_id,
-        payment_reference: Helpers.generatPaymentReference(),
+        payment_reference: Helpers.generatReference(),
         amount: +payload.amount,
         balance_before: wallet.balance,
         balance_after: balanceAfter,
@@ -116,10 +113,11 @@ export class WalletService {
         throw new HttpException('Wallet not found', HttpStatus.NOT_FOUND);
       }
 
-      if (Number(wallet.balance) < Number(payload.charge_amount)) {
-        const message = 'Transaction failed due to insufficient wallet balance';
-
-        return this.buildFailedResponse(payload, message);
+      if (Number(wallet.balance) < Number(payload.amount)) {
+        throw new HttpException(
+          'Transaction failed due to insufficient wallet balance',
+          HttpStatus.NOT_FOUND,
+        );
       }
 
       const updateResult = await queryRunner.manager
@@ -128,23 +126,23 @@ export class WalletService {
         .set({ balance: () => 'balance - :amount' })
         .where('id = :id AND balance >= :amount', {
           id: wallet.id,
-          amount: payload.charge_amount,
+          amount: payload.amount,
         })
         .execute();
 
       if (updateResult.affected === 0) {
-        return this.buildFailedResponse(payload);
+        throw new HttpException('Wallet charge failed', HttpStatus.BAD_REQUEST);
       }
 
       const balanceAfter = Helpers.subtractAmountFormatter(
         wallet.balance,
-        payload.charge_amount,
+        payload.amount,
       );
 
       await this.ledgerService.create(
         {
           user_id: wallet.user_id,
-          amount: payload.charge_amount,
+          amount: payload.amount,
           balance_after: balanceAfter,
           balance_before: wallet.balance,
           type: TransactionType.DEBIT,
@@ -155,7 +153,7 @@ export class WalletService {
 
       await queryRunner.commitTransaction();
 
-      return this.buildSuccessResponse(payload, wallet.balance, balanceAfter);
+      return this.buildSuccessResponse(payload, wallet.balance);
     } catch (error) {
       await queryRunner.rollbackTransaction();
 
@@ -166,12 +164,7 @@ export class WalletService {
         user_id: payload.user_id,
         payment_reference: null,
         amount: payload.amount,
-        amount_charged: payload.charge_amount,
-        balance_before: null,
-        balance_after: null,
         balance: null,
-        wallet_request_payload: JSON.stringify(payload),
-        wallet_response_payload: JSON.stringify(error?.response?.data || {}),
       };
     } finally {
       await queryRunner.release();
@@ -180,43 +173,17 @@ export class WalletService {
 
   private buildSuccessResponse(
     payload: IDebitRequestPayload,
-    balanceBefore: number,
-    balanceAfter: number,
+    balance: number,
   ): IDebitResponsePayload {
     const response: IDebitResponsePayload = {
       status: TransactionStatus.SUCCESSFUL,
       user_id: payload.user_id,
-      payment_reference: Helpers.generatPaymentReference(),
+      payment_reference: Helpers.generatReference(),
       amount: payload.amount,
-      amount_charged: payload.charge_amount,
-      balance_before: balanceBefore,
-      balance_after: balanceAfter,
-      balance: balanceAfter,
-      wallet_request_payload: JSON.stringify(payload),
-      wallet_response_payload: '', // placeholder
+      balance,
     };
 
-    response.wallet_response_payload = JSON.stringify(response);
     return response;
-  }
-
-  private buildFailedResponse(
-    payload: IDebitRequestPayload,
-    message: string = 'Transaction failed',
-  ): IDebitResponsePayload {
-    return {
-      message,
-      status: TransactionStatus.FAILED,
-      user_id: null,
-      payment_reference: null,
-      amount: null,
-      amount_charged: null,
-      balance_before: null,
-      balance_after: null,
-      balance: null,
-      wallet_request_payload: JSON.stringify(payload),
-      wallet_response_payload: null,
-    };
   }
 
   async create(

@@ -1,10 +1,10 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import {
   ICreditRequestPayload,
   IDebitRequestPayload,
-} from '../../payment-modes/interfaces';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { WalletService } from 'wallets/wallets.service';
+} from '../../interfaces/wallet.interface';
+import { WalletService } from '../../services/wallets/wallets.service';
 
 @ApiTags('Wallet')
 @Controller('wallets')

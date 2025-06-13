@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as compression from 'compression';
 import * as express from 'express';
 import helmet from 'helmet';
+import { AppModule } from 'src/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,12 +22,6 @@ async function bootstrap() {
   });
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Backend Assessment')
-    .setDescription('The API description')
-    .setVersion('1.0')
-    .build();
-
-  const config = new DocumentBuilder()
     .setTitle('Nest API')
     .setDescription('API to process Electricity payment from a Bill Vending')
     .setVersion('1.0')
@@ -38,7 +32,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port, () => {
-    console.warn(` 
+    this.logger.warn(` 
       --------------------------------------
       Application Server Sucessful!
       API Docs: localhost:${port}/api

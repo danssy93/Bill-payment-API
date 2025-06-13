@@ -1,24 +1,22 @@
 import { Module } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './controllers';
 import { AuthService } from './services';
-import { UserModule } from '../user';
-import { DeviceModule } from '../device/device.module';
+import { UsersModule } from '../users/users.module';
 import { CustomerJwtStrategy } from './strategies/customer-jwt.strategy';
-import { DeviceDetectionService } from '../device/service/new-device-detection.service';
-import { CustomerRefreshTokenStrategy } from './strategies';
-import { CustomerProfileModule } from '../customer-profile/customer-profile.module';
-import { OtpModule } from '../otp/otp.module';
+import { CONFIGURATION } from 'src/libs';
 
 @Module({
-  imports: [OtpModule, UserModule, DeviceModule, CustomerProfileModule],
-  providers: [
-    AuthService,
-    CustomerJwtStrategy,
-    CustomerRefreshTokenStrategy,
-    DeviceDetectionService,
-    JwtService,
+  imports: [
+    UsersModule,
+    JwtModule.register({
+      secret: CONFIGURATION.JWT.ACCESS_TOKEN.SECRET,
+      signOptions: {
+        expiresIn: CONFIGURATION.JWT.ACCESS_TOKEN.EXPIRY,
+      },
+    }),
   ],
+  providers: [AuthService, CustomerJwtStrategy],
   controllers: [AuthController],
   exports: [AuthService],
 })

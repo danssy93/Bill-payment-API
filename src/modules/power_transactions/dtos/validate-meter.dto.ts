@@ -43,4 +43,6 @@ export class ValidateMeterRequestDto {
     title: 'Meter Types',
   })
   readonly meter_type: MeterTypes;
+  receiver: any;
+  amount: any;
 }

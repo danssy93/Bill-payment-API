@@ -1,7 +1,11 @@
-import { ExecutionContext, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
-import AppError from 'src/shared/errors/AppError';
 
 @Injectable()
 export class CustomerJwtGuard extends AuthGuard('customer-jwt') {
@@ -22,7 +26,7 @@ export class CustomerJwtGuard extends AuthGuard('customer-jwt') {
 
   handleRequest(err, user) {
     if (err || !user || !user.refresh_token) {
-      throw new AppError('Unauthorized', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
     return user;

@@ -1,21 +1,31 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from './database/database.module';
-import { AppController } from './app.controller';
 import { AuthModule } from './modules/auth';
 import { LedgersModule } from './modules/ledgers/ledgers.module';
 import { PowerTransactionsModule } from './modules/power_transactions/power_transactions.module';
 import { UsersModule } from './modules/users/users.module';
 import { WalletsModule } from './modules/wallets/wallets.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { APP_FILTER } from '@nestjs/core';
+import { GlobalExceptionFilter } from './common/global-exception.filter';
+import { CronJobModule } from './modules/cron-job/cron-job.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     DatabaseModule,
     UsersModule,
     PowerTransactionsModule,
     LedgersModule,
     WalletsModule,
     AuthModule,
+    CronJobModule,
   ],
-  controllers: [AppController],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
+    },
+  ],
 })
 export class AppModule {}
